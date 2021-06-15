@@ -595,11 +595,21 @@ def video_feed():
 
 @app.route('/image_shot')
 def image_shot():
-    global current_img, process, client_is_connected
+    # global current_img, process, client_is_connected, process_name
+    global process, client_is_connected
     client_is_connected = True
     if not process is None:
         process.stdout.flush()
         time.sleep(1)
+
+    if process_name != "camera_stream":
+        switchFunction('camera_stream', "")
+        time.sleep(3)
+    else:
+        switchFunction('camera_stream', "")
+
+    pipe_img_rx_queue.get()
+    pipe_img_rx_queue.task_done()
 
     return Response(current_img, mimetype='image/jpeg')
 
