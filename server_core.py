@@ -76,6 +76,7 @@ serial_rx_queue = queue.Queue(10)
 pipe_meta_rx_queue = queue.Queue(10)
 pipe_img_rx_queue = queue.Queue(10)
 current_img = None
+current_json = None
 pipe_msg_rx_queue = queue.Queue(10)
 pipe_label_rx_queue = queue.Queue(10)
 pipe_result_rx_queue = queue.Queue(10)
@@ -249,7 +250,7 @@ class Thread_PIPERecv (threading.Thread):
         self.recv = True
 
     def PipeRecive(self):
-        global process, protocol, current_img
+        global process, protocol, current_img, current_json
         while True:
             process_lock.acquire()
             if process is None:
@@ -287,6 +288,7 @@ class Thread_PIPERecv (threading.Thread):
                     elif "meta" in doc:
                         if pipe_meta_rx_queue.qsize() >= 10:
                             continue
+                        current_json = doc
                         pipe_meta_rx_queue.put(payload)
                     # image render
                     elif "render" in doc:
@@ -612,6 +614,26 @@ def image_shot():
     pipe_img_rx_queue.task_done()
 
     return Response(current_img, mimetype='image/jpeg')
+
+@app.route('/result_json')
+def result_json():
+    # global current_img, process, client_is_connected, process_name
+    global process, client_is_connected
+    client_is_connected = True
+    if not process is None:
+        process.stdout.flush()
+        time.sleep(1)
+
+    if process_name != "face_detector":
+        switchFunction('face_detector', "")
+        time.sleep(3)
+    else:
+        switchFunction('face_detector', "")
+
+    data = json.dumps(current_json) + "\r\n"
+    
+    return Response(data, mimetype='application/json')
+
 
 
 def allowed_file(filename, allowed_extensions):
