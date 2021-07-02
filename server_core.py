@@ -76,7 +76,6 @@ serial_rx_queue = queue.Queue(10)
 pipe_meta_rx_queue = queue.Queue(10)
 pipe_img_rx_queue = queue.Queue(10)
 current_img = None
-current_json = None
 pipe_msg_rx_queue = queue.Queue(10)
 pipe_label_rx_queue = queue.Queue(10)
 pipe_result_rx_queue = queue.Queue(10)
@@ -250,7 +249,7 @@ class Thread_PIPERecv (threading.Thread):
         self.recv = True
 
     def PipeRecive(self):
-        global process, protocol, current_img, current_json
+        global process, protocol, current_img
         while True:
             process_lock.acquire()
             if process is None:
@@ -288,7 +287,6 @@ class Thread_PIPERecv (threading.Thread):
                     elif "meta" in doc:
                         if pipe_meta_rx_queue.qsize() >= 10:
                             continue
-                        current_json = doc
                         pipe_meta_rx_queue.put(payload)
                     # image render
                     elif "render" in doc:
@@ -615,35 +613,18 @@ def image_shot():
 
     return Response(current_img, mimetype='image/jpeg')
 
-# @app.route('/result_json')
-# def result_json():
-#     # global current_img, process, client_is_connected, process_name
-#     global process, client_is_connected
-#     client_is_connected = True
-#     if not process is None:
-#         process.stdout.flush()
-#         time.sleep(1)
-
-#     if process_name != "face_detector":
-#         switchFunction('face_detector', "")
-#         time.sleep(3)
-#     else:
-#         switchFunction('face_detector', "")
-
-#     data = json.dumps(current_json) + "\r\n"
-    
-#     return Response(data, mimetype='application/json')
-
-
 @app.route('/result_json')
 def result_json():
-    j = None
-    if pipe_result_rx_queue.qsize() != 0:
-        j = pipe_result_rx_queue.get()
-        pipe_result_rx_queue.task_done()
+    j = "None"
+    for num in range(50):
+        if pipe_result_rx_queue.qsize() != 0:
+            j = pipe_result_rx_queue.get()
+            pipe_result_rx_queue.task_done()
+            break
+        else:
+            time.sleep(0.01)
+            continue
     return Response(j, mimetype='application/json')
-
-
 
 def allowed_file(filename, allowed_extensions):
     return '.' in filename and \
