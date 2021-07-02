@@ -615,24 +615,33 @@ def image_shot():
 
     return Response(current_img, mimetype='image/jpeg')
 
+# @app.route('/result_json')
+# def result_json():
+#     # global current_img, process, client_is_connected, process_name
+#     global process, client_is_connected
+#     client_is_connected = True
+#     if not process is None:
+#         process.stdout.flush()
+#         time.sleep(1)
+
+#     if process_name != "face_detector":
+#         switchFunction('face_detector', "")
+#         time.sleep(3)
+#     else:
+#         switchFunction('face_detector', "")
+
+#     data = json.dumps(current_json) + "\r\n"
+    
+#     return Response(data, mimetype='application/json')
+
+
 @app.route('/result_json')
 def result_json():
-    # global current_img, process, client_is_connected, process_name
-    global process, client_is_connected
-    client_is_connected = True
-    if not process is None:
-        process.stdout.flush()
-        time.sleep(1)
-
-    if process_name != "face_detector":
-        switchFunction('face_detector', "")
-        time.sleep(3)
-    else:
-        switchFunction('face_detector', "")
-
-    data = json.dumps(current_json) + "\r\n"
-    
-    return Response(data, mimetype='application/json')
+    j = None
+    if pipe_result_rx_queue.qsize() != 0:
+        j = pipe_result_rx_queue.get()
+        pipe_result_rx_queue.task_done()
+    return Response(j, mimetype='application/json')
 
 
 
